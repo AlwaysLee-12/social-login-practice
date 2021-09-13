@@ -1,18 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Strategy } from 'passport-kakao';
-import { User } from 'src/entities/user.entity';
-import { Repository } from 'typeorm';
 import { AuthService } from './auth.service';
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
-  constructor(
-    private authService: AuthService,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-  ) {
+  constructor(private authService: AuthService) {
     super({
       clientID: process.env.KAKAO_CLIENT_ID,
       callbackURL: process.env.KAKAO_CALLBACK_URL,
@@ -38,10 +31,10 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
 
     const user = await this.authService.validateUser(user_email);
     if (!user) {
-      this.userRepository.create(user);
+      this.authService.createUser(user_profile);
     }
     const access_token = await this.authService.createLoginToken(user);
-    //const refresh_token = await this.authService.createRefreshToken(user);
-    return { access_token, type: 'login' };
+    // const refresh_token = await this.authService.createRefreshToken(user);
+    return { access_token, type: 'login' }; //refresh_token
   }
 }

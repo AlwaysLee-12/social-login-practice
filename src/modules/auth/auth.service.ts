@@ -20,6 +20,16 @@ export class AuthService {
     return user;
   }
 
+  async createUser(user_profile: any): Promise<User> {
+    const { email, nick_name, provider } = user_profile;
+    const userCreated = await this.usersRepository.create({
+      email,
+      nick_name,
+      provider,
+    });
+    return await this.usersRepository.save(userCreated);
+  }
+
   async createLoginToken(user: User) {
     const payload = {
       user_no: user.id,

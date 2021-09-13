@@ -24,27 +24,4 @@ export class UserService {
     const user = await this.userRepository.findOne({ id: id });
     await this.userRepository.delete(user);
   }
-
-  async register(userData: CreateUserDto): Promise<User> {
-    const { email, password, name, displayed_name } = userData;
-    const saltOrRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltOrRounds);
-    const user = await this.userRepository.create({
-      email,
-      password,
-      name,
-      displayed_name,
-    });
-    user.password = hashedPassword;
-    return await this.userRepository.save(user);
-  }
-
-  async updateDisplayedNameById(
-    id: number,
-    displayed_name: string,
-  ): Promise<User> {
-    const user = await this.userRepository.findOne({ id: id });
-    user.displayed_name = displayed_name;
-    return await this.userRepository.save(user);
-  }
 }
