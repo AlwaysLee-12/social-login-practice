@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-kakao';
+import { User } from 'src/entities/user.entity';
+import { UserService } from '../users/users.service';
 import { AuthService } from './auth.service';
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
-  constructor(private authService: AuthService) {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {
     super({
       clientID: process.env.KAKAO_CLIENT_ID,
       callbackURL: process.env.KAKAO_CALLBACK_URL,
@@ -17,24 +22,18 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     refreshToken: string,
     profile: any,
     done: any,
-  ): Promise<any> {
+  ): Promise<User> {
     const user_email = profile._json.email;
     const user_nickname = profile._json.nickname;
     const user_provider = profile.provider;
-    const user_profile = {
-      user_email,
-      user_nickname,
-      user_provider,
-    };
 
-    console.log(user_profile);
+    //console.log(user_profile);
 
-    const user = await this.authService.validateUser(user_email);
+    let user = await this.authService.validateUser(user_email);
     if (!user) {
-      this.authService.createUser(user_profile);
+      const newUser = { user_email, user_nickname, user_provider };
+      user = this.userService.createUser(newUser);
     }
-    const access_token = await this.authService.createLoginToken(user);
-    // const refresh_token = await this.authService.createRefreshToken(user);
-    return { access_token, type: 'login' }; //refresh_token
+    return user;
   }
 }

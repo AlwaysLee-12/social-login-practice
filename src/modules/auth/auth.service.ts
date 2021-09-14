@@ -1,89 +1,43 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
-import { getConnection, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { hash } from 'bcrypt';
+import { UserService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    private readonly userService: UserService,
     private readonly jwtService: JwtService,
   ) {}
 
   async validateUser(user_email: string): Promise<any> {
-    const user = await this.usersRepository.findOne({ email: user_email });
+    const user = await this.userService.findUserByEmail(user_email);
     if (!user) {
       return null;
     }
     return user;
   }
 
-  async createUser(user_profile: any): Promise<User> {
-    const { email, nick_name, provider } = user_profile;
-    const userCreated = await this.usersRepository.create({
-      email,
-      nick_name,
-      provider,
+  async login(user: User) {
+    const payload = { user_id: user.id, sub: user.email };
+    const access_token = this.jwtService.sign(payload);
+    const refresh_token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_TOKEN_SECRET,
+      expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION,
     });
-    return await this.usersRepository.save(userCreated);
+
+    const currentHashedRefreshToken = await hash(refresh_token, 10);
+    user.currentHashedRefreshToken = currentHashedRefreshToken;
+    await this.userService.setUserRefreshToken(user);
+    return { access_token: access_token, refresh_token: refresh_token };
   }
 
-  async createLoginToken(user: User) {
-    const payload = {
-      user_no: user.id,
-      user_token: 'loginToken',
-    };
-
-    return this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: '1h',
-    });
-  }
-
-  async createRefreshToken(user: User) {
-    const payload = {
-      user_no: user.id,
-      user_token: 'refreshToken',
-    };
-
-    const token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: '1h',
-    });
-
-    const refresh_token = CryptoJS.AES.encrypt(
-      JSON.stringify(token),
-      process.env.AES_KEY,
-    ).toString();
-
-    await getConnection()
-      .createQueryBuilder()
-      .update(User)
-      .set({ user_refresh_token: token })
-      .where(`user_no=${user.user_no}`)
-      .execute();
-    return refresh_token;
-  }
-
-  onceToken(user_profile: any) {
-    const payload = {
-      user_email: user_profile.user_email,
-      user_nick: user_profile.user_nick,
-      user_provider: user_profile.user_provider,
-      user_token: 'onceToken',
-    };
-
-    return this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: '1h',
-    });
-  }
-
-  async tokenValidate(token: string) {
-    return await this.jwtService.verify(token, {
-      secret: process.env.JWT_SECRET,
-    });
+  async refresh(user: User) {
+    const payload = { user_id: user.id, sub: user.email };
+    const newAccessToken = await this.jwtService.sign(payload);
+    return newAccessToken;
   }
 }

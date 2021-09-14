@@ -1,9 +1,14 @@
 import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { KakaoAuthGuard } from './kakao-auth.guard';
 import { Response } from 'express';
+import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { JwtRefreshGuard } from './jwt-refresh-auth.guard';
 
 @Controller('auth')
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
   @UseGuards(KakaoAuthGuard)
   @Get('kakao')
   async kakaoLogin() {
@@ -13,13 +18,19 @@ export class AuthController {
   @UseGuards(KakaoAuthGuard)
   @Get('kakao/callback')
   async callback(@Req() req, @Res() res: Response) {
-    if (req.user.type === 'login') {
-      res.cookie('access_token', req.user.access_token);
-      res.cookie('refresh_token', req.user.refresh_token);
-    } else {
-      res.cookie('once_token', req.user.once_token);
-    }
-    res.redirect('http://localhost:3000/auth/signup');
-    res.end();
+    return this.authService.login(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  getProfile(@Req() req) {
+    return req.user;
+  }
+
+  @UseGuards(JwtRefreshGuard)
+  @Get('refresh')
+  refreshToken(@Req() req) {
+    const newAccessToken = this.authService.refresh(req.user);
+    return { access_token: newAccessToken };
   }
 }
