@@ -30,12 +30,12 @@ export class UserService {
 
   async createUser(userData: any): Promise<User> {
     const { email, nick_name, provider } = userData;
-    const user = await this.userRepository.create({
+    const user = this.userRepository.create({
       email,
       nick_name,
       provider,
     });
-    return this.userRepository.save(user);
+    return await this.userRepository.save(user);
   }
 
   async setUserRefreshToken(user: User): Promise<User> {
