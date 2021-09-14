@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Headers, Req, Res, UseGuards } from '@nestjs/common';
 import { KakaoAuthGuard } from './kakao-auth.guard';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
