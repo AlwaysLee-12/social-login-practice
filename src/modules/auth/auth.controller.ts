@@ -1,5 +1,12 @@
-import { Controller, Get, Put, Req, Res, UseGuards } from '@nestjs/common';
-import { KakaoAuthGuard } from './kakao-auth.guard';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -14,15 +21,30 @@ export class AuthController {
   // async kakaoLogin() {
   //   return;
   // }
-
-  @UseGuards(KakaoAuthGuard)
-  @Get('kakao')
+  @Post('kakao')
   async kakaoLogin(@Req() req: any, @Res() res: Response) {
-    this.authService.isValidToken(
-      req.access_token_kakao,
+    const kakaoUserData = this.authService.isValidKakaoToken(
       req.headers.access_token,
     );
-    return this.authService.login(req.user);
+    if (!kakaoUserData) return;
+    let user = await this.authService.validateUser(kakaoUserData.id);
+    if (!user) {
+      user = await this.authService.createUser(kakaoUserData, 'kakao');
+    }
+    return this.authService.login(user);
+  }
+
+  @Post('apple')
+  async appleLogin(@Req() req: any) {
+    const appleUserData = this.authService.isValidAppleToken(
+      req.headers.access_token,
+    );
+    if (!appleUserData) return;
+    let user = await this.authService.validateUser(appleUserData.id);
+    if (!user) {
+      user = await this.authService.createUser(appleUserData, 'apple');
+    }
+    return this.authService.login(user);
   }
 
   @Put('logout')
