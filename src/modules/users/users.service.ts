@@ -15,8 +15,8 @@ export class UserService {
     return await this.userRepository.findOne({ id: id });
   }
 
-  async findUserByEmail(email: string): Promise<User> {
-    return await this.userRepository.findOne({ email: email });
+  async findUserByKakaoID(user_kakao_id: number): Promise<User> {
+    return await this.userRepository.findOne({ kakaoID: user_kakao_id });
   }
 
   async findAllUser(): Promise<User[]> {
@@ -28,12 +28,15 @@ export class UserService {
     await this.userRepository.delete(user);
   }
 
-  async createUser(userData: any): Promise<User> {
-    const { email, nick_name, provider } = userData;
+  async createUser(
+    kakao_id: number,
+    nick_name: string,
+    provider: string,
+  ): Promise<User> {
     const user = this.userRepository.create({
-      email,
-      nick_name,
-      provider,
+      kakaoID: kakao_id,
+      nick_name: nick_name,
+      provider: provider,
     });
     return await this.userRepository.save(user);
   }
