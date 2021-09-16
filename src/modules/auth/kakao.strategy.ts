@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-kakao';
-import { User } from 'src/entities/user.entity';
 import { UserService } from '../users/users.service';
 import { AuthService } from './auth.service';
 
@@ -22,7 +21,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     refreshToken: string,
     profile: any,
     done: any,
-  ): Promise<User> {
+  ): Promise<any> {
     const user_email = profile._json.email;
     const user_nickname = profile._json.nickname;
     const user_provider = profile.provider;
@@ -32,8 +31,8 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     let user = await this.authService.validateUser(user_email);
     if (!user) {
       const newUserData = { user_email, user_nickname, user_provider };
-      user = this.userService.createUser(newUserData);
+      user = await this.userService.createUser(newUserData);
     }
-    return user;
+    return { access_token_kakao: accessToken, user: user };
   }
 }

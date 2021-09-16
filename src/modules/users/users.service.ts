@@ -54,4 +54,8 @@ export class UserService {
     if (refreshTokenIsMatching) return user;
     throw new UnauthorizedException();
   }
+
+  async deleteUserRefreshToken(user: User): Promise<void> {
+    this.userRepository.update(user, { currentHashedRefreshToken: '' });
+  }
 }

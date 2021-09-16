@@ -1,4 +1,4 @@
-import { Injectable, Options } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
@@ -21,6 +21,15 @@ export class AuthService {
     return user;
   }
 
+  async isValidToken(
+    access_token_provider: string,
+    access_token_client: string,
+  ): Promise<void> {
+    if (access_token_provider !== access_token_client) {
+      throw new UnauthorizedException();
+    }
+  }
+
   async login(user: User) {
     const payload = { user_id: user.id, user_email: user.email };
     const access_token = this.jwtService.sign(payload);
@@ -35,7 +44,11 @@ export class AuthService {
     return { access_token: access_token, refresh_token: refresh_token };
   }
 
-  async refresh(user: User, refresh_token: string): Promise<any> {
+  async logout(user: User): Promise<void> {
+    this.userService.deleteUserRefreshToken(user);
+  }
+
+  async refresh(user: User): Promise<any> {
     const payload = { user_id: user.id, sub: user.email };
     const newAccessToken = this.jwtService.sign(payload);
     return newAccessToken;
