@@ -7,10 +7,10 @@ export class User {
   id: number;
 
   @Column({ unique: true })
-  kakaoID: number;
+  provider_id: number;
 
   @Column()
-  nick_name: string;
+  user_name: string;
 
   @Column()
   provider: string;

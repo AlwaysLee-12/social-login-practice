@@ -15,8 +15,14 @@ export class UserService {
     return await this.userRepository.findOne({ id: id });
   }
 
-  async findUserByKakaoID(user_kakao_id: number): Promise<User> {
-    return await this.userRepository.findOne({ kakaoID: user_kakao_id });
+  async findUserByProviderIdAndProvider(
+    provider_id: number,
+    provider: string,
+  ): Promise<User> {
+    return await this.userRepository.findOne({
+      provider_id: provider_id,
+      provider: provider,
+    });
   }
 
   async findAllUser(): Promise<User[]> {
@@ -29,13 +35,13 @@ export class UserService {
   }
 
   async createUser(
-    kakao_id: number,
-    nick_name: string,
+    provider_id: number,
+    user_name: string,
     provider: string,
   ): Promise<User> {
     const user = this.userRepository.create({
-      kakaoID: kakao_id,
-      nick_name: nick_name,
+      provider_id: provider_id,
+      user_name: user_name,
       provider: provider,
     });
     return await this.userRepository.save(user);
