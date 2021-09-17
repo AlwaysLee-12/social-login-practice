@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
-import { Repository } from 'typeorm';
+import { Long, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -15,8 +15,8 @@ export class UserService {
     return await this.userRepository.findOne({ id: id });
   }
 
-  async findUserByEmail(email: string): Promise<User> {
-    return await this.userRepository.findOne({ email: email });
+  async findUserByProviderId(provider_id: number): Promise<User> {
+    return await this.userRepository.findOne({ provider_id: provider_id });
   }
 
   async findAllUser(): Promise<User[]> {
@@ -29,10 +29,10 @@ export class UserService {
   }
 
   async createUser(userData: any): Promise<User> {
-    const { email, nick_name, provider } = userData;
+    const { provider_id, user_name, provider } = userData;
     const user = this.userRepository.create({
-      email,
-      nick_name,
+      provider_id,
+      user_name,
       provider,
     });
     return await this.userRepository.save(user);
@@ -47,6 +47,7 @@ export class UserService {
     userID: number,
   ): Promise<User> {
     const user = await this.userRepository.findOne({ id: userID });
+    refreshToken = refreshToken.replace('Bearer ', '');
     const refreshTokenIsMatching = await bcrypt.compare(
       refreshToken,
       user.currentHashedRefreshToken,

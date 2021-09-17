@@ -9,20 +9,16 @@ import { JwtRefreshGuard } from './jwt-refresh-auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // @UseGuards(KakaoAuthGuard)
-  // @Get('kakao')
-  // async kakaoLogin() {
-  //   return;
-  // }
-
   @UseGuards(KakaoAuthGuard)
   @Get('kakao')
+  async kakaoLogin1() {
+    return;
+  }
+
+  @UseGuards(KakaoAuthGuard)
+  @Get('kakao/callback')
   async kakaoLogin(@Req() req: any, @Res() res: Response) {
-    this.authService.isValidToken(
-      req.access_token_kakao,
-      req.headers.access_token,
-    );
-    return this.authService.login(req.user);
+    return await this.authService.login(req.user);
   }
 
   @Put('logout')
@@ -38,8 +34,13 @@ export class AuthController {
 
   @UseGuards(JwtRefreshGuard)
   @Get('refresh')
-  refreshToken(@Req() req: any) {
-    const newAccessToken = this.authService.refresh(req.user);
+  async refreshToken(@Req() req: any) {
+    const clientRefreshToken = req.headers.authorization;
+    const user = await this.authService.isRefreshTokenMatching(
+      clientRefreshToken,
+      req.user.userId,
+    );
+    const newAccessToken = await this.authService.refresh(user);
     return { access_token: newAccessToken };
   }
 }

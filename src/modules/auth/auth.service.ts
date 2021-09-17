@@ -1,5 +1,4 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { hash } from 'bcrypt';
@@ -8,39 +7,31 @@ import { UserService } from '../users/users.service';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(user_email: string): Promise<any> {
-    const user = await this.userService.findUserByEmail(user_email);
+  async validateUser(provider_id: number): Promise<any> {
+    const user = await this.userService.findUserByProviderId(provider_id);
     if (!user) {
       return null;
     }
     return user;
   }
 
-  async isValidToken(
-    access_token_provider: string,
-    access_token_client: string,
-  ): Promise<void> {
-    if (access_token_provider !== access_token_client) {
-      throw new UnauthorizedException();
-    }
-  }
-
-  async login(user: User) {
-    const payload = { user_id: user.id, user_email: user.email };
-    const access_token = this.jwtService.sign(payload);
+  async login(req: any): Promise<any> {
+    const payload = { user_id: req.user.id, user_name: req.user.user_name };
+    const access_token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      expiresIn: '30m',
+    });
     const refresh_token = this.jwtService.sign(payload, {
       secret: process.env.JWT_REFRESH_TOKEN_SECRET,
-      expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION,
+      expiresIn: '14d',
     });
-
     const currentHashedRefreshToken = await hash(refresh_token, 10);
-    user.currentHashedRefreshToken = currentHashedRefreshToken;
-    await this.userService.setUserRefreshToken(user);
+    req.user.currentHashedRefreshToken = currentHashedRefreshToken;
+    await this.userService.setUserRefreshToken(req.user);
     return { access_token: access_token, refresh_token: refresh_token };
   }
 
@@ -49,8 +40,18 @@ export class AuthService {
   }
 
   async refresh(user: User): Promise<any> {
-    const payload = { user_id: user.id, sub: user.email };
-    const newAccessToken = this.jwtService.sign(payload);
+    const payload = { user_id: user.id, sub: user.user_name };
+    const newAccessToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      expiresIn: '30m',
+    });
     return newAccessToken;
+  }
+
+  async isRefreshTokenMatching(
+    refreshToken: string,
+    userID: number,
+  ): Promise<User> {
+    return this.userService.isRefreshTokenMatching(refreshToken, userID);
   }
 }

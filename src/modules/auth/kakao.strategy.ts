@@ -22,15 +22,13 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     profile: any,
     done: any,
   ): Promise<any> {
-    const user_email = profile._json.email;
-    const user_nickname = profile._json.nickname;
-    const user_provider = profile.provider;
+    const provider = profile.provider;
+    const provider_id = profile.id;
+    const user_name = profile.username;
 
-    //console.log(user_profile);
-
-    let user = await this.authService.validateUser(user_email);
+    let user = await this.authService.validateUser(provider_id);
     if (!user) {
-      const newUserData = { user_email, user_nickname, user_provider };
+      const newUserData = { provider_id, user_name, provider };
       user = await this.userService.createUser(newUserData);
     }
     return { access_token_kakao: accessToken, user: user };
