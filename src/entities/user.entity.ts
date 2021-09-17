@@ -7,7 +7,7 @@ export class User {
   id: number;
 
   @Column({ unique: true })
-  email: string;
+  kakaoID: number;
 
   @Column()
   nick_name: string;

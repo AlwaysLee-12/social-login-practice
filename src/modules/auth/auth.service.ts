@@ -13,8 +13,8 @@ export class AuthService {
     private readonly httpService: HttpService,
   ) {}
 
-  async validateUser(user_kakao_id: number): Promise<any> {
-    const user = await this.userService.findUserByKakaoID(user_kakao_id);
+  async validateUser(user_id: number): Promise<any> {
+    const user = await this.userService.findUserById(user_id);
     if (!user) {
       return null;
     }
