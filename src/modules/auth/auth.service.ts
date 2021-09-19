@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { hash } from 'bcrypt';
 import { UserService } from '../users/users.service';
 import { HttpService } from '@nestjs/axios';
-import { map } from 'rxjs/operators';
+import { map, Observable } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -35,7 +35,12 @@ export class AuthService {
     if (!access_token_kakao) {
       throw new UnauthorizedException();
     }
-    return this.httpService.get(api_url, { headers: header }); //observable {subscribe: ~} 데이터 추출하는 법 강구
+    const kakaoData: any = this.httpService
+      .get(api_url, {
+        headers: header,
+      })
+      .pipe(map((response) => response.data));
+    return kakaoData.toPromise();
   }
 
   async isValidAppleToken(access_token_apple: string): Promise<any> {
@@ -59,10 +64,13 @@ export class AuthService {
 
   async login(user: User) {
     const payload = { user_id: user.id, user_name: user.user_name };
-    const access_token = this.jwtService.sign(payload);
+    const access_token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+      expiresIn: '30m',
+    });
     const refresh_token = this.jwtService.sign(payload, {
       secret: process.env.JWT_REFRESH_TOKEN_SECRET,
-      expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION,
+      expiresIn: '14d',
     });
 
     const currentHashedRefreshToken = await hash(refresh_token, 10);

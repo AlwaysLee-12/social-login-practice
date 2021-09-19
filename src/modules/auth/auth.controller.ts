@@ -17,17 +17,20 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Get('kakao')
-  async kakaoLogin(@Req() req: any, @Res() res: Response) {
+  async kakaoLogin(@Req() req: any) {
     const kakaoUserData = await this.authService.isValidKakaoToken(
       req.headers.authorization,
     );
-    console.log(kakaoUserData);
     if (!kakaoUserData) return;
-    let user = await this.authService.validateUser(kakaoUserData.id, kakaoUserData.provider);
+    let user = await this.authService.validateUser(kakaoUserData.id, 'kakao');
     if (!user) {
-      user = await this.authService.createUser(kakaoUserData.id, kakaoUserData.profile.username, kakaoUserData.provider);
+      user = await this.authService.createUser(
+        kakaoUserData.id,
+        kakaoUserData.profile.kakao_account.profile.nickname,
+        'kakao',
+      );
     }
-    return this.authService.login(user);
+    return await this.authService.login(user);
   }
 
   // @Post('apple')
